@@ -1,0 +1,57 @@
+﻿@page "/register"
+@using Microsoft.AspNetCore.Components.Forms
+@inherits OwningComponentBase
+@inject IToastService ToastService
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<FluentStack VerticalGap="20"
+             Style="position: fixed; top: 50%; left: 50%; margin-left: -180px; margin-top: -275px">
+    <FluentWizard StepperPosition="StepperPosition.Top"
+                  StepSequence="WizardStepSequence.Any"
+                  DisplayStepNumber="@(WizardStepStatus.Next)"
+                  Border="WizardBorder.Outside"
+                  @ref="@MyWizard"
+                  @bind-Value="@Value"
+                  StepTitleHiddenWhen="@GridItemHidden.XsAndDown"
+                  Style="height: 550px; width: 360px; border-radius: 8px; padding: 15px;">
+        <Steps>
+            <FluentWizardStep Label="Information" DeferredLoading="@IsLoading">
+                <FluentEditForm Model="_registerRequest" FormName="personalInfo">
+                <DataAnnotationsValidator />
+                    <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" >
+                        <FluentTextField Style="width: 100%" Autofocus AutoComplete="on" @bind-Value=_registerRequest.Email Label="Email" TextFieldType="TextFieldType.Email" InputMode="InputMode.Email" Required></FluentTextField>
+                        <FluentTextField Style="width: 100%" @bind-Value=_registerRequest.UserName Label="User name" TextFieldType="TextFieldType.Text" Required></FluentTextField>
+                        <FluentTextField Style="width: 100%" @bind-Value=_registerRequest.FirstName Label="First name" TextFieldType="TextFieldType.Text" Required></FluentTextField>
+                        <FluentTextField Style="width: 100%" @bind-Value=_registerRequest.LastName Label="Last name" TextFieldType="TextFieldType.Text" Required></FluentTextField>
+                        <FluentTextField Style="width: 100%" @bind-Value=_registerRequest.Password Label="Password" TextFieldType="TextFieldType.Password" Required></FluentTextField>
+                    </FluentStack>
+                </FluentEditForm>
+            </FluentWizardStep>
+
+            <FluentWizardStep Label="Finish">
+                Thank you for registering on our platform. To complete your registration, please confirm your email address
+                <FluentButton OnClick="SendRegisterMail" Appearance="Appearance.Accent" Loading="IsLoading">Resend</FluentButton>
+            </FluentWizardStep>
+        </Steps>
+        <ButtonTemplate>
+            @{
+                var index = context;
+                var lastStepIndex = 1;
+
+                <div>
+                  @if (index != lastStepIndex)
+                    {
+                        <FluentButton Loading="@IsLoading" OnClick="Submit" Appearance="Appearance.Accent">Next</FluentButton>
+
+                    }
+                    else
+                    {
+                        <FluentButton OnClick="@(x => NavigationManager.NavigateTo("/"))" Appearance="Appearance.Accent">Finish</FluentButton>
+                    }
+                </div>
+            }
+        </ButtonTemplate>
+    </FluentWizard>
+
+</FluentStack>

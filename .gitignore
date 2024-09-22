@@ -1,7 +1,15 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
 /BlazorCodeBase/Server/SettingFile.json
 /BlazorCodeBase/Server/SQLiteDb.db-shm
 /BlazorCodeBase/Server/SQLiteDb.db-wal
+.vs/
+BlazorCodeBase/Client/bin/
+BlazorCodeBase/Client/obj/
+BlazorCodeBase/Server/bin/
+BlazorCodeBase/Server/obj/
+BlazorCodeBase/Shared/bin/
+BlazorCodeBase/Shared/obj/
+BlazorCodeBase/Server/appsettings.json
