@@ -46,6 +46,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                                              .Select(x => new UserInfoResponse(x.FirstName,
                                                                                x.LastName,
                                                                                x.Email,
+                                                                               x.UserName,
                                                                                userInfo.Where(x => x.UserId == x.UserId).Select(x => x.RoleName)));
 
                 await SendOkAsync(list.ToArray(), ct);
@@ -55,5 +56,5 @@ namespace BlazorCodeBase.Server.Endpoint.User
 
     record UserInfoRequest(string? Email);
 
-    record UserInfoResponse(string? FirstName, string? LastName, string? Email, IEnumerable<string> Roles);
+    record UserInfoResponse(string? FirstName, string? LastName, string? Email, string? UserName, IEnumerable<string> Roles);
 }

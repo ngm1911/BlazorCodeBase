@@ -1,10 +1,13 @@
-﻿@using Microsoft.FluentUI.AspNetCore.Components
+﻿@using BlazorCodeBase.Client.Pages
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.FluentUI.AspNetCore.Components
 @inherits LayoutComponentBase
 
-<main>
-    @Body
-</main>
-
+<div class="page">
+    <main>
+        @Body
+    </main>
+</div>
 
 <FluentToastProvider />
 <FluentDialogProvider />

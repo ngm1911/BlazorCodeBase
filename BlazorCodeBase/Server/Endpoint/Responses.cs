@@ -13,5 +13,6 @@ namespace BlazorCodeBase.Server.Endpoint
         public static BaseResponse UserNotFound => new(statusCode: HttpStatusCode.NotFound, message: "User is not found");
         public static BaseResponse UnAuthorized => new(statusCode: HttpStatusCode.Unauthorized, message: "UnAuthorized");
         public static BaseResponse NeedConfirmEmail => new(statusCode: HttpStatusCode.BadRequest, message: "Need confirm email");
+        public static BaseResponse VerifiedTwoFactorCode => new(statusCode: HttpStatusCode.OK, message: "2FA is OK");
     }
 }

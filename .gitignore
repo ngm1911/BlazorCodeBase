@@ -13,3 +13,5 @@ BlazorCodeBase/Server/obj/
 BlazorCodeBase/Shared/bin/
 BlazorCodeBase/Shared/obj/
 BlazorCodeBase/Server/appsettings.json
+BlazorCodeBase/Server/SQLiteDb.db
+BlazorCodeBase/Server/Logs/

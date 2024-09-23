@@ -8,26 +8,28 @@ using System.Net.Http.Json;
 
 namespace BlazorCodeBase.Client.Pages
 {
-    public partial class Register : OwningComponentBase
+    public partial class Login : OwningComponentBase
     {
         FluentWizard MyWizard = default!;
         int Value = 0;
 
+        private LoginRequest _registerRequest = new();
+
+        public string? TwoFactorCode { get; set; }
+
         public bool IsLoading { get; set; }
 
-        private RegisterRequest _registerRequest = new();
-
-        async Task SendRegisterMail()
+        private async Task DoLogin()
         {
             try
             {
                 IsLoading = true;
-                var response = await HttpClient.PostAsJsonAsync<RegisterMailRequest>($"api/SendMail/Register", new(_registerRequest.Email));
+                var response = await HttpClient.PostAsJsonAsync($"api/User/Login", _registerRequest);
                 var content = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
                 {
                     var result = JsonConvert.DeserializeObject<BaseResponse>(content);
-                    if (result.StatusCode != (int)HttpStatusCode.OK)
+                    if (result?.Errors?.Count > 0)
                     {
                         var errors = result.Errors.SelectMany(x => x.Value);
                         foreach (var error in errors)
@@ -35,46 +37,14 @@ namespace BlazorCodeBase.Client.Pages
                             ToastService.ShowToast(ToastIntent.Error, error);
                         }
                     }
-                }
-                else
-                {
-                    ToastService.ShowToast(ToastIntent.Error, content);
-                }
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task Submit()
-        {
-            try
-            {
-                IsLoading = true;
-                var response = await HttpClient.PostAsJsonAsync($"api/User/Register", _registerRequest);
-                var content = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = JsonConvert.DeserializeObject<BaseResponse>(content);
-                    if (result.StatusCode == (int)HttpStatusCode.Created)
-                    {
-                        ToastService.ShowToast(ToastIntent.Success, "OK");
-                        await MyWizard.GoToStepAsync(Value + 1);
-                        SendRegisterMail();
-                    }
-                    else if (result?.Errors?.Count > 0)
-                    {
-                        var errors = result.Errors.SelectMany(x => x.Value);
-                        foreach (var error in errors)
-                        {
-                            ToastService.ShowToast(ToastIntent.Error, error);
-                        }
-                    }
-                    else
+                    else if (result?.StatusCode != (int)HttpStatusCode.OK)
                     {
                         ToastService.ShowToast(ToastIntent.Error, result.Message);
                     }
+                    else
+                    {
+                        await MyWizard.GoToStepAsync(Value + 1);
+                    }
                 }
                 else
                 {
@@ -86,26 +56,70 @@ namespace BlazorCodeBase.Client.Pages
                 IsLoading = false;
             }
         }
+        
+        private async Task VerifyCode()
+        {
+            try
+            {
+                IsLoading = true;
+                var response = await HttpClient.PostAsJsonAsync($"api/User/VerifyTwoFactorCode", new { Code = TwoFactorCode });
+                var content = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<BaseResponse>(content);
+                    if (result?.Errors?.Count > 0)
+                    {
+                        var errors = result.Errors.SelectMany(x => x.Value);
+                        foreach (var error in errors)
+                        {
+                            ToastService.ShowToast(ToastIntent.Error, error);
+                        }
+                    }
+                    else if (result?.StatusCode != (int)HttpStatusCode.Created)
+                    {
+                        ToastService.ShowToast(ToastIntent.Error, result.Message);
+                    }
+                    else
+                    {
+                        var userVerified = JsonConvert.DeserializeObject<User>(result?.Data.ToString());
+                        if (userVerified is not null)
+                        {
+                            await AuthorizationUserService.PersistUserToBrowser(userVerified)
+                                                          .ConfigureAwait(true);
+                            NavigationManager.NavigateTo("mainScreen");
+                        }
+                    }
+                }
+                else
+                {
+                    ToastService.ShowToast(ToastIntent.Error, content);
+                }
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+        
+        private async Task LoginGoogle()
+        {
+            try
+            {
+                IsLoading = true;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
 
-        private class RegisterRequest
+        private class LoginRequest
         {
             [Required]
             public string? UserName { get; set; }
 
             [Required]
-            public string? FirstName { get; set; }
-
-            [Required]
-            public string? LastName { get; set; }
-
-            [Required]
-            [EmailAddress]
-            public string? Email { get; set; }
-
-            [Required]
             public string? Password { get; set; }
         }
-
-        record RegisterMailRequest(string? ToEmail);
     }
 }

@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
@@ -35,6 +36,8 @@ builder.Services
         .AddEntityFrameworkSqlite()
         .AddDbContext<SQLiteContext>(options => options.UseSqlite(configuration["Settings:ConnectionString:DbContext"]))
         .AddEndpointsApiExplorer()
+        .AddHealthChecks()
+        .Services
         .AddIdentityCore<UserInfo>(options =>
         {
             options.Password.RequireDigit = true;
@@ -65,7 +68,8 @@ builder.Services
         .AddHttpContextAccessor()
         .AddCors(options =>
         {
-            options.AddPolicy("CorsPolicy", builder => {
+            options.AddPolicy("CorsPolicy", builder =>
+            {
                 builder.WithOrigins("http://localhost:3000")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
@@ -130,9 +134,7 @@ builder.Services
             SocketOptions = bool.Parse(configuration["Settings:MailSettings:IsSecure"]) ? SecureSocketOptions.StartTls : SecureSocketOptions.None,
             RequiresAuthentication = bool.Parse(configuration["Settings:MailSettings:IsAuthen"])
         })
-        .AddRazorRenderer()
-        .Services
-        .AddHealthChecks();
+        .AddRazorRenderer();
 AddSerilog();
 AddServices();
 
@@ -156,7 +158,7 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.MapHealthChecks("/api/pingServer").RequireAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
@@ -190,7 +192,6 @@ app.UseCors("CorsPolicy")
            await httpContext.Response.WriteAsync(responseText);
        });
    })
-   .UseHealthChecks("/api/pingServer")
    .UseFastEndpoints(c =>
    {
        c.Endpoints.RoutePrefix = "api";

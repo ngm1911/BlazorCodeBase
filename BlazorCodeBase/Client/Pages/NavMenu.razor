@@ -1,0 +1,33 @@
+﻿@inherits OwningComponentBase
+@inject AuthorizationUserService AuthorizationUserService
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+
+<FluentStack HorizontalAlignment="@HorizontalAlignment.End"
+             VerticalAlignment="@VerticalAlignment.Center"
+             Style="height: 48px; background: var(--neutral-layer-4); padding-inline-end: 10px; ">
+    <FluentProfileMenu Status="@PresenceStatus.Available"
+                       HeaderLabel="Microsoft"
+                       Initials="BG"
+                       FullName="Bill Gates"
+                       EMail="bill.gates@microsoft.com"
+                       PopoverStyle="min-width: 330px;" 
+                       OnHeaderButtonClick="Logout" />
+</FluentStack>
+
+
+@code
+{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        var result = await HttpClient.GetAsync($"api/pingServer");
+        if (result.IsSuccessStatusCode == false)
+        {
+            await HttpClient.PostAsync("/api/User/Logout", null)
+                            .ConfigureAwait(true);
+            AuthorizationUserService.ClearTokenUser();
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

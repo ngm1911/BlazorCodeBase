@@ -27,41 +27,50 @@ namespace BlazorCodeBase.Server.Endpoint.User
 
         public override async Task HandleAsync(VerifyTwoFactorCodeRequest req, CancellationToken ct)
         {
-            var user = await userManager.FindByNameAsync(User.Identity.Name);
-            if (user is null)
+            if (string.IsNullOrWhiteSpace(User?.Identity?.Name))
             {
                 await SendOkAsync(Responses.UserNotFound, ct);
             }
             else
             {
-                if (await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, req.Code) == false)
+                var user = await userManager.FindByNameAsync(User?.Identity?.Name);
+                if (user is null)
                 {
-                    await SendOkAsync(Responses.UnAuthorized, ct);
+                    await SendOkAsync(Responses.UserNotFound, ct);
                 }
                 else
                 {
-                    var roles = await userManager.GetRolesAsync(user);
-                    var jwtToken = await jwtGenerate
-                                            .SetUserName(user.UserName)
-                                            .SetEmail(user.Email)
-                                            .SetRole(roles)
-                                            .SetVerified2FA(true)
-                                            .Build()
-                                            .ExecuteAsync(ct);
+                    if (await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, req.Code) == false)
+                    {
+                        await SendOkAsync(Responses.UnAuthorized, ct);
+                    }
+                    else
+                    {
+                        var roles = await userManager.GetRolesAsync(user);
+                        var jwtToken = await jwtGenerate
+                                                .SetUserName(user.UserName)
+                                                .SetEmail(user.Email)
+                                                .SetRole(roles)
+                                                .SetVerified2FA(true)
+                                                .Build()
+                                                .ExecuteAsync(ct);
 
-                    HttpContext.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt!.CookieOpt);
-                    HttpContext.Response.Cookies.Append(Constant.ACCESS_TOKEN, jwtToken, settings.Value.Jwt.CookieOpt);
+                        HttpContext.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt!.CookieOpt);
+                        HttpContext.Response.Cookies.Append(Constant.ACCESS_TOKEN, jwtToken, settings.Value.Jwt.CookieOpt);
 
-                    await SendOkAsync(Responses.OK, ct);
+                        var userInfoResponse = new UserInfoResponse(user.FirstName,
+                                                           user.FirstName,
+                                                           user.Email,
+                                                           user.UserName,
+                                                           roles);
+                        await SendCreatedAtAsync(nameof(GetUserInfoEndpoint), new { user.Email }, userInfoResponse, cancellation: ct);
+                    }
                 }
             }
         }
     }
 
-    class VerifyTwoFactorCodeRequest
-    {
-        public string Code { get; set; }
-    }
+    record VerifyTwoFactorCodeRequest(string? Code);
 
     class VerifyTwoFactorCodeValidator : Validator<VerifyTwoFactorCodeRequest>
     {

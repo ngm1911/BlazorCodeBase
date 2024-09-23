@@ -1,0 +1,73 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Forms
+@inherits OwningComponentBase
+@inject IToastService ToastService
+@inject HttpClient HttpClient
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject AuthorizationUserService AuthorizationUserService
+
+<div>
+    <FluentStack VerticalGap="20"
+                 Style="position: fixed; top: 50%; left: 50%; margin-left: -150px; margin-top: -200px">
+
+        <FluentWizard StepperPosition="StepperPosition.Top"
+                      StepSequence="WizardStepSequence.Linear"
+                      DisplayStepNumber="@(WizardStepStatus.Current | WizardStepStatus.Next)"
+                      Border="WizardBorder.Outside"
+                      @ref="@MyWizard"
+                      @bind-Value="@Value"
+                      StepTitleHiddenWhen="@GridItemHidden.XsAndDown"
+                      Style="width: 300px; border-radius: 8px; padding: 15px;">
+            <Steps>
+                <FluentWizardStep Label="Login" DeferredLoading="@IsLoading">
+                    <FluentEditForm OnSubmit="DoLogin" Model="_registerRequest" FormName="personalInfo">
+                        <DataAnnotationsValidator />
+                        <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentTextField Style="width: 100%" Immediate Autofocus AutoComplete="on" @bind-Value=_registerRequest.UserName Label="UserName" Required></FluentTextField>
+                            <FluentTextField Style="width: 100%" Immediate @bind-Value=_registerRequest.Password Label="Password" TextFieldType="TextFieldType.Password" Required></FluentTextField>
+
+                            <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
+                                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" OnClick="DoLogin" Loading="IsLoading">Login</FluentButton>
+                            </FluentStack>
+
+                            <FluentDivider Style="width: 100%;" Role="DividerRole.Presentation"></FluentDivider>
+
+                            <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
+                                <FluentButton Appearance="Appearance.Outline" OnClick="LoginGoogle">Login with Google</FluentButton>
+                            </FluentStack>
+
+                            <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
+                                <FluentAnchor Href="#" Appearance="Appearance.Hypertext" OnClick="@(x => NavigationManager.NavigateTo("register"))">Register</FluentAnchor>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentEditForm>
+                </FluentWizardStep>
+
+                <FluentWizardStep Label="Verify 2FA">
+                    <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentTextField Style="width: 100%" Autofocus @bind-Value=TwoFactorCode Label="Verify code" Required></FluentTextField>
+                    </FluentStack>
+                </FluentWizardStep>
+            </Steps>
+            <ButtonTemplate>
+                @{
+                    var index = context;
+                    var lastStepIndex = 1;
+
+                    <div>
+                        @if (index != lastStepIndex)
+                        {
+                            // <FluentButton Type="ButtonType.Submit" Loading="@IsLoading" OnClick="DoLogin" Appearance="Appearance.Accent">Next</FluentButton>
+
+                        }
+                        else
+                        {
+                            <FluentButton OnClick="VerifyCode" Appearance="Appearance.Accent">Finish</FluentButton>
+                        }
+                    </div>
+                }
+            </ButtonTemplate>
+        </FluentWizard>
+    </FluentStack>
+</div>

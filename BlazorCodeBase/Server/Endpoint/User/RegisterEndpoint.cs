@@ -41,6 +41,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                 var userInfoResponse = new UserInfoResponse(user.FirstName,
                                                            user.FirstName,
                                                            user.Email,
+                                                           user.UserName,
                                                            ["Guest"]);
                 await SendCreatedAtAsync(nameof(GetUserInfoEndpoint), new { user.Email }, userInfoResponse, cancellation: ct);
             }

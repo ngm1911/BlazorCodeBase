@@ -1,0 +1,10 @@
+﻿::deep .full-width,
+::deep .full-width fluent-card {
+    width: 300px;
+    height: 350px
+}
+
+::deep .fluent-flipper .next
+{
+    visibility: hidden;
+}

@@ -1,4 +1,6 @@
 using BlazorCodeBase.Client;
+using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -16,5 +18,14 @@ builder.Services.AddFluentUIComponents(options =>
 {
     options.ValidateClassNames = false;
 });
+
+
+builder.Services.AddBlazoredLocalStorage();
+
+builder.Services.AddScoped<AuthorizationUserService>();
+builder.Services.AddScoped<AuthorizationProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider, AuthorizationProvider>();
+
+builder.Services.AddAuthorizationCore();
 
 await builder.Build().RunAsync();
