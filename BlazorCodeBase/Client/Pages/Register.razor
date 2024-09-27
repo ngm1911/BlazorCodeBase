@@ -44,7 +44,7 @@
                 <div>
                   @if (index != lastStepIndex)
                     {
-                        <FluentButton Type="ButtonType.Submit" Loading="@IsLoading" OnClick="Submit" Appearance="Appearance.Accent">Next</FluentButton>
+                        <FluentButton Type="ButtonType.Submit" Loading="@IsLoading" OnClick="Submit" IconEnd="@(new Icons.Regular.Size24.ArrowCircleRight().WithColor(Color.Fill))" Appearance="Appearance.Accent">Next</FluentButton>
 
                     }
                     else

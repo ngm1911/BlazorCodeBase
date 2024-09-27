@@ -28,7 +28,7 @@
                             <FluentTextField Style="width: 100%" Immediate @bind-Value=_registerRequest.Password Label="Password" TextFieldType="TextFieldType.Password" Required></FluentTextField>
 
                             <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
-                                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" OnClick="DoLogin" Loading="IsLoading">Login</FluentButton>
+                                <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" IconEnd="@(new Icons.Regular.Size24.ArrowCircleRight().WithColor(Color.Fill))" OnClick="DoLogin" Loading="IsLoading">Login</FluentButton>
                             </FluentStack>
 
                             <FluentDivider Style="width: 100%;" Role="DividerRole.Presentation"></FluentDivider>
@@ -63,7 +63,7 @@
                         }
                         else
                         {
-                            <FluentButton OnClick="VerifyCode" Appearance="Appearance.Accent">Finish</FluentButton>
+                            <FluentButton OnClick="VerifyCode" Appearance="Appearance.Accent" IconEnd="@(new Icons.Regular.Size24.ArrowCircleRight().WithColor(Color.Fill))">Finish</FluentButton>
                         }
                     </div>
                 }

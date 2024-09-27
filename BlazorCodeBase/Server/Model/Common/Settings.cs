@@ -5,6 +5,14 @@
         public Jwt? Jwt { get; set; }
         public Connectionstring? ConnectionString { get; set; }
         public Mailsettings? MailSettings { get; set; }
+        public GoogleAuthen? GoogleAuthen { get; set; }
+    }
+
+    public class GoogleAuthen
+    {
+        public string? ClientId { get; set; }
+        public string? ClientSecret { get; set; }
+        public string? RedirectUris { get; set; }
     }
 
     public class Jwt

@@ -7,6 +7,8 @@ using FastEndpoints;
 using FastEndpoints.Security;
 using FastEndpoints.Swagger;
 using MailKit.Security;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
@@ -15,10 +17,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
 using System.Text.Json.Serialization;
+using static Microsoft.FluentUI.AspNetCore.Components.Emojis.TravelPlaces.Color.Default;
 using BaseResponse = BlazorCodeBase.Shared.BaseResponse;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,7 +74,7 @@ builder.Services
         {
             options.AddPolicy("CorsPolicy", builder =>
             {
-                builder.WithOrigins("http://localhost:3000")
+                builder.WithOrigins("https://localhost:7081")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials()
@@ -86,27 +90,49 @@ builder.Services
         {
             options.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(10);
         })
-        .AddAuthenticationJwtBearer(s => s.SigningKey = configuration["Settings:Jwt:Key"], o =>
-        {
-            o.TokenValidationParameters = new TokenValidationParameters
+            .AddAuthentication(options =>
             {
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Settings:Jwt:Key"]!)),
-                ValidateLifetime = false,
-                ValidateIssuerSigningKey = true,
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                RequireExpirationTime = false
-            };
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            })
+            .AddCookie(o =>
+            {
+                o.Cookie.IsEssential = true;
+            })
+            .AddGoogle(options =>
+            {
+                options.ClientId = configuration["Settings:GoogleAuthen:ClientId"];
+                options.ClientSecret = configuration["Settings:GoogleAuthen:ClientSecret"];
+                //options.CallbackPath = "/api/google/signin-google";
 
-            o.Events = new JwtBearerEvents
+                // Define scopes
+                options.Scope.Clear();
+                options.Scope.Add("openid");
+                options.Scope.Add("profile");
+                options.Scope.Add("email");
+            })
+            .AddJwtBearer(options =>
             {
-                OnMessageReceived = context =>
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    context.Token = context.Request.Cookies[Constant.ACCESS_TOKEN];
-                    return Task.CompletedTask;
-                }
-            };
-        })
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    RequireExpirationTime = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Settings:Jwt:Key"]))
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.Token = context.Request.Cookies[Constant.ACCESS_TOKEN];
+                        return Task.CompletedTask;
+                    }
+                };
+            })
+        .Services
         .AddAuthorization(options =>
         {
             options.DefaultPolicy = new AuthorizationPolicyBuilder()
@@ -153,7 +179,6 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 

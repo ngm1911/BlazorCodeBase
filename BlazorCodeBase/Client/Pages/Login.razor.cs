@@ -106,6 +106,7 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 IsLoading = true;
+                await HttpClient.PostAsync($"api/Google/Login", null);
             }
             finally
             {
