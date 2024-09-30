@@ -48,9 +48,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                     {
                         var roles = await userManager.GetRolesAsync(user);
                         var jwtToken = await jwtGenerate
-                                                .SetUserName(user.UserName)
-                                                .SetEmail(user.Email)
-                                                .SetRole(roles)
+                                                .SetUserInfo(user)
                                                 .SetVerified2FA(true)
                                                 .Build()
                                                 .ExecuteAsync(ct);

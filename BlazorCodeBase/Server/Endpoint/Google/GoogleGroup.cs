@@ -6,10 +6,10 @@ namespace BlazorCodeBase.Server.Endpoint.Google
     {
         public GoogleGroup()
         {
-            Configure("Google", ep =>             
+            Configure("google", ep =>             
             {
                 ep.Description(x => x
-                  .WithTags("Google"));
+                  .WithTags("google"));
             });
         }
     }

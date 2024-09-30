@@ -9,9 +9,7 @@ using BlazorCodeBase.Server.Database.Model;
 
 namespace BlazorCodeBase.Server.Endpoint.User
 {
-    class ComfirmRegisterEmailEndpoint(UserManager<UserInfo> userManager,
-                        JwtGenerateBuilder jwtGenerate, 
-                        IOptionsSnapshot<Settings> settings) : Endpoint<ComfirmRegisterEmailRequest>
+    class ComfirmRegisterEmailEndpoint(UserManager<UserInfo> userManager) : Endpoint<ComfirmRegisterEmailRequest>
     {
         public override void Configure()
         {

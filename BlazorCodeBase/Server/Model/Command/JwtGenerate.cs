@@ -1,4 +1,5 @@
-﻿using BlazorCodeBase.Server.Handler;
+﻿using BlazorCodeBase.Server.Database.Model;
+using BlazorCodeBase.Server.Handler;
 
 namespace BlazorCodeBase.Server.Model.Command
 {
@@ -6,21 +7,9 @@ namespace BlazorCodeBase.Server.Model.Command
     {
         private readonly JwtGenerateCommand JwtGenerate = new();
 
-        public JwtGenerateBuilder SetUserName(string userName)
+        public JwtGenerateBuilder SetUserInfo(UserInfo userInfo)
         {
-            JwtGenerate.UserName = userName;
-            return this;
-        }
-        
-        public JwtGenerateBuilder SetEmail(string email)
-        {
-            JwtGenerate.Email = email;
-            return this;
-        }
-
-        public JwtGenerateBuilder SetRole(IList<string> role)
-        {
-            JwtGenerate.Role = role;
+            JwtGenerate.UserInfo = userInfo;
             return this;
         }
         

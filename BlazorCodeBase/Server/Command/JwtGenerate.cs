@@ -3,29 +3,32 @@ using FastEndpoints.Security;
 using BlazorCodeBase.Server.Model.Common;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
+using BlazorCodeBase.Server.Database.Model;
+using BlazorCodeBase.Client;
+using Microsoft.AspNetCore.Identity;
 
 namespace BlazorCodeBase.Server.Handler
 {
     public class JwtGenerateCommand : ICommand<string>
     {
-        public string? UserName { get; set; }
-        public string? Email { get; set; }
+        public UserInfo? UserInfo { get; set; }
+
         public bool Verified2FA { get; set; }
-        public IList<string> Role { get; set; }
     }
 
-    public class JwtGenerateHandler(IOptionsSnapshot<Settings> settings) : ICommandHandler<JwtGenerateCommand, string>
+    public class JwtGenerateHandler(UserManager<UserInfo> userManager, IOptionsSnapshot<Settings> settings) : ICommandHandler<JwtGenerateCommand, string>
     {
         public async Task<string> ExecuteAsync(JwtGenerateCommand command, CancellationToken ct)
         {
+            var roles = await userManager.GetRolesAsync(command.UserInfo);
             var jwtToken = JwtBearer.CreateToken(
                 o =>
                 {
                     o.SigningKey = settings.Value.Jwt.Key;
                     o.ExpireAt = settings.Value.Jwt.ExpireTime.HasValue ? DateTime.UtcNow.AddMinutes(settings.Value.Jwt.ExpireTime.Value) : null;
-                    o.User.Claims.Add((ClaimTypes.Name, command.UserName));
-                    o.User.Claims.Add((ClaimTypes.Email, command.Email));
-                    foreach (var item in command.Role)
+                    o.User.Claims.Add((ClaimTypes.Name, command.UserInfo.UserName));
+                    o.User.Claims.Add((ClaimTypes.Email, command.UserInfo.Email));
+                    foreach (var item in roles)
                     {
                         o.User.Claims.Add((ClaimTypes.Role, item));
                     }

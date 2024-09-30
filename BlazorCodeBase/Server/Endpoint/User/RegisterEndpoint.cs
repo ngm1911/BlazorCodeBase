@@ -1,17 +1,14 @@
-﻿using BlazorCodeBase.Server.Database.Model;
+﻿using BlazorCodeBase.Client;
+using BlazorCodeBase.Server.Database.Model;
 using BlazorCodeBase.Server.Model.Command;
 using FastEndpoints;
 using FluentValidation;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Serilog;
-using System;
 using System.Net;
-using System.Net.Http;
 
 namespace BlazorCodeBase.Server.Endpoint.User
 {
-    class RegisterEndpoint(UserManager<UserInfo> userManager, UserInfoBuilder userInfoBuilder, SendMailBuilder mailBuilder) : Endpoint<RegisterRequest, UserInfoResponse>
+    class RegisterEndpoint(RegisterBuilder registerBuilder) : Endpoint<RegisterRequest, UserInfoResponse>
     {
         public override void Configure()
         {
@@ -27,27 +24,26 @@ namespace BlazorCodeBase.Server.Endpoint.User
 
         public override async Task HandleAsync(RegisterRequest req, CancellationToken ct)
         {
-            var user = userInfoBuilder.SetEmail(req.Email)
-                                      .SetUserName(req.UserName)
-                                      .SetFirstName(req.FirstName)
-                                      .SetLastName(req.LastName)
-                                      .SetTwoFactorEnabled(true)
-                                      .Build();
-
-            var result = await userManager.CreateAsync(user, req.Password);
-            if (result.Succeeded)
+            var errors = await registerBuilder.SetUserName(req.UserName)
+                                              .SetEmail(req.Email)
+                                              .SetLastName(req.LastName)
+                                              .SetFirstName(req.FirstName)
+                                              .SetPassword(req.Password)
+                                              .SetTwoFactorEnabled(true)
+                                              .Build()
+                                              .ExecuteAsync(ct);
+            if (errors.Any())
             {
-                await userManager.AddToRoleAsync(user, "Guest");
-                var userInfoResponse = new UserInfoResponse(user.FirstName,
-                                                           user.FirstName,
-                                                           user.Email,
-                                                           user.UserName,
-                                                           ["Guest"]);
-                await SendCreatedAtAsync(nameof(GetUserInfoEndpoint), new { user.Email }, userInfoResponse, cancellation: ct);
+                await SendResultAsync(TypedResults.BadRequest(errors));
             }
             else
             {
-                await SendResultAsync(TypedResults.BadRequest(result.Errors));
+                var userInfoResponse = new UserInfoResponse(req.FirstName,
+                                                            req.FirstName,
+                                                            req.Email,
+                                                            req.UserName,
+                                                           ["Guest"]);
+                await SendCreatedAtAsync(nameof(GetUserInfoEndpoint), new { req.Email }, userInfoResponse, cancellation: ct);
             }
         }
     }
@@ -75,5 +71,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
     }
 
     record RegisterRequest(string UserName, string? FirstName, string? LastName, string? Password, string? Email);
+
     public record RegisterTemplateModel(string UserName, string? FirstName, string? LastName, string? Url);
+
 }

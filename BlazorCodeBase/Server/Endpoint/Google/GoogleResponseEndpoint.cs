@@ -31,6 +31,7 @@ namespace BlazorCodeBase.Server.Endpoint.Google
 
         public override async Task HandleAsync(CancellationToken ct)
         {
+            var result1 = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             string[] scopes = { "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email" };
             var result = await GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets()
             {
