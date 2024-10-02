@@ -19,6 +19,14 @@ namespace BlazorCodeBase.Client.Pages
 
         public bool IsLoading { get; set; }
 
+        public string LoginGoogleUrl
+        {
+            get
+            {
+                return $"{HttpClient.BaseAddress}/api/google/login";
+            }
+        }
+
         private async Task DoLogin()
         {
             try
@@ -94,19 +102,6 @@ namespace BlazorCodeBase.Client.Pages
                 {
                     ToastService.ShowToast(ToastIntent.Error, content);
                 }
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-        
-        private async Task LoginGoogle()
-        {
-            try
-            {
-                IsLoading = true;
-                await HttpClient.GetAsync($"api/google/login");
             }
             finally
             {

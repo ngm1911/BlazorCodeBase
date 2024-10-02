@@ -1,5 +1,8 @@
 ﻿using BlazorCodeBase.Server.Model.Common;
 using FastEndpoints;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.Extensions.Options;
 using System.Net;
 
@@ -21,6 +24,8 @@ namespace BlazorCodeBase.Server.Endpoint.User
         public override async Task HandleAsync(CancellationToken ct)
         {
             HttpContext.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt.CookieOpt);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
             await SendOkAsync(ct);
         }
     }

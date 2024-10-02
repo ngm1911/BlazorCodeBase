@@ -9,7 +9,7 @@ namespace BlazorCodeBase.Server.Endpoint.Google
             Configure("google", ep =>             
             {
                 ep.Description(x => x
-                  .WithTags("google"));
+                  .WithTags("Google"));
             });
         }
     }

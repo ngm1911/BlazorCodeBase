@@ -12,22 +12,5 @@
                        FullName="Bill Gates"
                        EMail="bill.gates@microsoft.com"
                        PopoverStyle="min-width: 330px;" 
-                       OnHeaderButtonClick="Logout" />
+                       OnHeaderButtonClick="LogoutAsync" />
 </FluentStack>
-
-
-@code
-{
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await base.OnAfterRenderAsync(firstRender);
-        var result = await HttpClient.GetAsync($"api/pingServer");
-        if (result.IsSuccessStatusCode == false)
-        {
-            await HttpClient.PostAsync("/api/User/Logout", null)
-                            .ConfigureAwait(true);
-            AuthorizationUserService.ClearTokenUser();
-            NavigationManager.NavigateTo("/");
-        }
-    }
-}

@@ -7,12 +7,30 @@ namespace BlazorCodeBase.Client.Pages
     {
         public bool IsLoading { get; set; }
 
-        private async void Logout()
+        private async Task LogoutAsync()
         {
             await HttpClient.PostAsync("/api/User/Logout", null)
                             .ConfigureAwait(false);
             AuthorizationUserService.ClearTokenUser();
             NavigationManager.NavigateTo("/");
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            bool authorized = false;
+            try
+            {
+                var result = await HttpClient.GetAsync($"api/pingServer");
+                authorized = result.IsSuccessStatusCode;
+            }
+            finally
+            {
+                if (authorized == false)
+                {
+                    await LogoutAsync();
+                }
+            }
         }
     }
 }

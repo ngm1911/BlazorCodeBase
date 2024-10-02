@@ -15,12 +15,12 @@ namespace BlazorCodeBase.Server.Endpoint
         {
             Post("/Register");
             AllowAnonymous();
+            Group<SendMail>();
             Summary(s => {
                 s.Summary = "Send register mail";
                 s.Description = "This api to send register mail";
                 s.Responses[200] = "OK";
             });
-            Group<SendMail>();
         }
 
         public override async Task HandleAsync(RegisterMailRequest req, CancellationToken ct)

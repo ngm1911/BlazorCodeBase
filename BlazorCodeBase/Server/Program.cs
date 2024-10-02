@@ -1,27 +1,24 @@
-﻿using BlazorCodeBase.Client;
-using BlazorCodeBase.Server.Database.DbContext;
+﻿using BlazorCodeBase.Server.Database.DbContext;
 using BlazorCodeBase.Server.Database.Interceptor;
 using BlazorCodeBase.Server.Database.Model;
-using BlazorCodeBase.Server.Endpoint.User;
 using BlazorCodeBase.Server.Model.Command;
 using BlazorCodeBase.Server.Model.Common;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using MailKit.Security;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Org.BouncyCastle.Ocsp;
 using Serilog;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -79,8 +76,7 @@ builder.Services
                 builder.WithOrigins("https://localhost:7081")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
-                            .AllowCredentials()
-                            .WithExposedHeaders("Content-Disposition");
+                            .AllowCredentials();
             });
         })
         .Configure<JsonOptions>(op =>
@@ -94,60 +90,22 @@ builder.Services
         })
             .AddAuthentication(options =>
             {
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = "MultiAuthScheme";
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddCookie()
-            .AddGoogle(options =>
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.ExpireTimeSpan = TimeSpan.FromSeconds(30);
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+            })
+            .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
             {
                 options.ClientId = configuration["Settings:GoogleAuthen:ClientId"];
                 options.ClientSecret = configuration["Settings:GoogleAuthen:ClientSecret"];
                 options.CallbackPath = "/api/google/signin-google";
-
-                options.Events = new OAuthEvents
-                {
-                    OnCreatingTicket = async context =>
-                    {
-                        if (context.Identity?.IsAuthenticated == true)
-                        {
-                            string? name = context.Identity.FindFirst(ClaimTypes.Name)?.Value;
-                            string? surname = context.Identity.FindFirst(ClaimTypes.Surname)?.Value;
-                            string? givenName = context.Identity.FindFirst(ClaimTypes.GivenName)?.Value;
-                            string? email = context.Identity.FindFirst(ClaimTypes.Email)?.Value;
-                            string? userName = context.Identity.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-
-                            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<UserInfo>>();
-                            var user = await userManager.FindByEmailAsync(email);
-                            if (user is null)
-                            {
-                                var registerBuilder = context.HttpContext.RequestServices.GetRequiredService<RegisterBuilder>();
-                                await registerBuilder.SetUserName(userName)
-                                                  .SetEmail(email)
-                                                  .SetLastName(surname)
-                                                  .SetFirstName(givenName)
-                                                  .SetPassword(Guid.NewGuid().ToString())
-                                                  .SetTwoFactorEnabled(false)
-                                                  .SetFromGoogle(true)
-                                                  .Build()
-                                                  .ExecuteAsync();
-
-                                user = await userManager.FindByEmailAsync(email);
-                            }
-
-                            var jwtGenerate = context.HttpContext.RequestServices.GetRequiredService<JwtGenerateBuilder>();
-                            var jwtToken = await jwtGenerate
-                                                    .SetUserInfo(user)
-                                                    .SetVerified2FA(true)
-                                                    .Build()
-                                                    .ExecuteAsync();
-
-                            var settings = context.HttpContext.RequestServices.GetRequiredService<IOptionsSnapshot<Settings>>();
-                            context.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt!.CookieOpt);
-                            context.Response.Cookies.Append(Constant.ACCESS_TOKEN, jwtToken, settings.Value.Jwt.CookieOpt);
-                        }
-                    }
-                };
             })
             .AddJwtBearer(options =>
             {
@@ -170,12 +128,31 @@ builder.Services
                     }
                 };
             })
+            .AddPolicyScheme("MultiAuthScheme", "MultiAuthScheme", options =>
+            {
+                options.ForwardDefaultSelector = context =>
+                {
+                    if (context.Request.Path.StartsWithSegments("/api/google"))
+                    {
+                        return CookieAuthenticationDefaults.AuthenticationScheme;
+                    }
+                    else
+                    {
+                        return JwtBearerDefaults.AuthenticationScheme;
+                    }
+                };
+            })
         .Services
+        .Configure<CookiePolicyOptions>(options =>
+        {
+            options.MinimumSameSitePolicy = SameSiteMode.None;
+            options.Secure = CookieSecurePolicy.Always;
+        })
         .AddAuthorization(options =>
         {
             options.DefaultPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
-                .RequireClaim("amr", "mfa")
+                //.RequireClaim("amr", "mfa")
                 .Build();
         })
         .AddFastEndpoints()
@@ -217,13 +194,13 @@ else
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
-
 app.UseRouting();
 app.MapHealthChecks("/api/pingServer").RequireAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 app.UseCors("CorsPolicy")
+   .UseCookiePolicy()
    .UseHttpsRedirection()
    .UseSwaggerUi()
    .UseSwaggerGen()
@@ -321,10 +298,9 @@ using (var scope = app.Services.CreateScope())
     await roleManager.CreateAsync(new IdentityRole("Admin"));
 }
 
-
-app.MapGet("api/google/login", async (HttpContext context) =>
+app.MapGet("api/google/login", async (context) =>
 {
-    await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/api/google/signin-google" });
+    await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/api/google/signin-google/" });
 
 }).AllowAnonymous();
 

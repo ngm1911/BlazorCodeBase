@@ -1,45 +1,81 @@
 ﻿using FastEndpoints;
-using FluentValidation;
 using System.Net;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using BlazorCodeBase.Server.Endpoint.User;
 using Microsoft.AspNetCore.Authentication.Google;
-using Google.Apis.Auth.OAuth2;
 using BlazorCodeBase.Server.Model.Common;
 using Microsoft.Extensions.Options;
+using BlazorCodeBase.Server.Model.Command;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+using BlazorCodeBase.Server.Database.Model;
 
 namespace BlazorCodeBase.Server.Endpoint.Google
 {
-    class GoogleResponseEndpoint(IOptionsSnapshot<Settings> settings) : EndpointWithoutRequest
+    class GoogleResponseEndpoint(UserManager<UserInfo> userManager,
+                                 IOptionsSnapshot<Settings> settings,
+                                 RegisterBuilder registerBuilder,
+                                 JwtGenerateBuilder jwtGenerate) : EndpointWithoutRequest
     {
         public override void Configure()
         {
             Get("/signin-google");
-            AllowAnonymous();
+            Group<GoogleGroup>();
             Summary(s => {
                 s.Summary = "GoogleResponse";
                 s.Description = "This api to received reponse from google";
                 s.Responses[(int)HttpStatusCode.OK] = "OK";
             });
-            Group<GoogleGroup>();
+            AllowAnonymous();
         }
 
         public override async Task HandleAsync(CancellationToken ct)
         {
-            var result1 = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            string[] scopes = { "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email" };
-            var result = await GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets()
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            if (result.Succeeded)
             {
-                ClientId = settings.Value.GoogleAuthen.ClientId,
-                ClientSecret = settings.Value.GoogleAuthen.ClientSecret,
-            }, scopes, "user", ct);
+                string? name = result.Principal.FindFirst(ClaimTypes.Name)?.Value;
+                string? surname = result.Principal.FindFirst(ClaimTypes.Surname)?.Value;
+                string? givenName = result.Principal.FindFirst(ClaimTypes.GivenName)?.Value;
+                string? email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+                string? userName = result.Principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            await SendOkAsync(ct);
+                var user = await userManager.FindByEmailAsync(email);
+                if (user is null)
+                {
+                    var errors = await registerBuilder.SetUserName(userName)
+                                      .SetEmail(email)
+                                      .SetLastName(surname)
+                                      .SetFirstName(givenName)
+                                      .SetPassword(Guid.NewGuid().ToString())
+                                      .SetTwoFactorEnabled(false)
+                                      .SetFromGoogle(true)
+                                      .Build()
+                                      .ExecuteAsync(ct);
+
+                    if (errors.Any())
+                    {
+                        foreach (var error in errors)
+                        {
+                            AddError(error.Description);
+                        }
+                    }
+                }
+                ThrowIfAnyErrors();
+                var jwtToken = await jwtGenerate
+                                .SetUserInfo(user!)
+                                .SetVerified2FA(true)
+                                .Build()
+                                .ExecuteAsync(ct);
+
+                HttpContext.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt!.CookieOpt);
+                HttpContext.Response.Cookies.Append(Constant.ACCESS_TOKEN, jwtToken, settings.Value.Jwt.CookieOpt);
+
+                await SendRedirectAsync("/mainScreen");
+            }
+            else
+            {
+                await SendUnauthorizedAsync(ct);
+            }
         }
     }
 }
