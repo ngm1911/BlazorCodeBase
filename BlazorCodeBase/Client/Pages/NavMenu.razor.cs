@@ -9,10 +9,16 @@ namespace BlazorCodeBase.Client.Pages
 
         private async Task LogoutAsync()
         {
-            await HttpClient.PostAsync("/api/User/Logout", null)
-                            .ConfigureAwait(false);
-            AuthorizationUserService.ClearTokenUser();
-            NavigationManager.NavigateTo("/");
+            try
+            {
+                await HttpClient.PostAsync("/api/User/Logout", null)
+                                .ConfigureAwait(false);
+            }
+            finally
+            {
+                AuthorizationUserService.ClearTokenUser();
+                NavigationManager.NavigateTo("/");
+            }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

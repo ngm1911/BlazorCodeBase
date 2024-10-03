@@ -11,14 +11,16 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http.Json;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -76,7 +78,8 @@ builder.Services
                 builder.WithOrigins("https://localhost:7081")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
-                            .AllowCredentials();
+                            .AllowCredentials()
+                            .WithExposedHeaders("Content-Disposition");
             });
         })
         .Configure<JsonOptions>(op =>
@@ -98,14 +101,27 @@ builder.Services
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {
                 options.ExpireTimeSpan = TimeSpan.FromSeconds(30);
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
             })
             .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
             {
                 options.ClientId = configuration["Settings:GoogleAuthen:ClientId"];
                 options.ClientSecret = configuration["Settings:GoogleAuthen:ClientSecret"];
                 options.CallbackPath = "/api/google/signin-google";
+
+                options.Events.OnRedirectToAuthorizationEndpoint = context =>
+                {
+                    var uriBuilder = new UriBuilder(context.RedirectUri);
+                    var query = QueryHelpers.ParseQuery(uriBuilder.Query);
+                    var queryDict = new Dictionary<string, string>(query.SelectMany(kvp => kvp.Value.Select(v => new KeyValuePair<string, string>(kvp.Key, v))));
+                    queryDict.TryAdd("prompt", "select_account");
+                    uriBuilder.Query = QueryString.Create(queryDict).ToUriComponent();
+                    context.Response.Redirect(uriBuilder.ToString());
+                    return Task.CompletedTask;
+                };
             })
             .AddJwtBearer(options =>
             {
@@ -115,7 +131,7 @@ builder.Services
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    RequireExpirationTime = false,
+                    RequireExpirationTime = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Settings:Jwt:Key"]))
                 };
 
@@ -143,16 +159,11 @@ builder.Services
                 };
             })
         .Services
-        .Configure<CookiePolicyOptions>(options =>
-        {
-            options.MinimumSameSitePolicy = SameSiteMode.None;
-            options.Secure = CookieSecurePolicy.Always;
-        })
         .AddAuthorization(options =>
         {
             options.DefaultPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
-                //.RequireClaim("amr", "mfa")
+                .RequireClaim(ClaimTypes.AuthenticationMethod, "mfa")
                 .Build();
         })
         .AddFastEndpoints()
@@ -200,7 +211,6 @@ app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 app.UseCors("CorsPolicy")
-   .UseCookiePolicy()
    .UseHttpsRedirection()
    .UseSwaggerUi()
    .UseSwaggerGen()
@@ -301,7 +311,6 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("api/google/login", async (context) =>
 {
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/api/google/signin-google/" });
-
 }).AllowAnonymous();
 
 app.Run();

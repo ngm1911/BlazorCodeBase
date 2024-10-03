@@ -24,7 +24,7 @@
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.None,
+            SameSite = SameSiteMode.Lax,
             IsEssential = true
         };
     }

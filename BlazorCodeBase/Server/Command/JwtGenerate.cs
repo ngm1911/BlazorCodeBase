@@ -34,9 +34,10 @@ namespace BlazorCodeBase.Server.Handler
                     }
                     if (command.Verified2FA)
                     {
-                        o.User.Claims.Add(("amr", "mfa"));
+                        o.User.Claims.Add((ClaimTypes.AuthenticationMethod, "mfa"));
                     }
                 });
+
             return await Task.FromResult(jwtToken);
         }
     }
