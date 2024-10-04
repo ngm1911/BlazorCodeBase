@@ -54,7 +54,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
             }
             else
             {
-                await SendOkAsync(Responses.UnAuthorized, ct);
+                await SendUnauthorizedAsync(ct);
             }
         }
     }

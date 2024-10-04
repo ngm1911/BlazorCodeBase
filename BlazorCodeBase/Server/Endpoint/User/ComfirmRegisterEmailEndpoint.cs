@@ -28,7 +28,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
             var user = await userManager.FindByNameAsync(req.UserName);
             if (user is null)
             {
-                await SendOkAsync(Responses.UserNotFound, ct);
+                await SendNotFoundAsync(ct);
             }
             else
             {
@@ -39,7 +39,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                 }
                 else
                 {
-                    await SendOkAsync(Responses.OK, ct);
+                    await SendOkAsync(ct);
                 }
             }
         }

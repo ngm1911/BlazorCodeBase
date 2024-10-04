@@ -1,7 +1,9 @@
-﻿@inherits OwningComponentBase
+﻿@using BlazorCodeBase.Client.RefitApi
+@inherits OwningComponentBase
 @inject AuthorizationUserService AuthorizationUserService
 @inject NavigationManager NavigationManager
-@inject HttpClient HttpClient
+@inject IUserApi IUserApi
+@inject ICommonApi ICommonApi
 
 <FluentStack HorizontalAlignment="@HorizontalAlignment.End"
              VerticalAlignment="@VerticalAlignment.Center"

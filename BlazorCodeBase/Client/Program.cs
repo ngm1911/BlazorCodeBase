@@ -1,9 +1,11 @@
 using BlazorCodeBase.Client;
+using BlazorCodeBase.Client.RefitApi;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Refit;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -27,5 +29,15 @@ builder.Services.AddScoped<AuthorizationProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthorizationProvider>();
 
 builder.Services.AddAuthorizationCore();
+
+builder.Services.AddScoped<RequestHandler>();
+
+builder.Services.AddRefitClient<IUserApi>()
+                .ConfigureHttpClient(c => c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+                .AddHttpMessageHandler<RequestHandler>()
+       .Services
+                .AddRefitClient<IGoogleApi>()
+                .ConfigureHttpClient(c => c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+
 
 await builder.Build().RunAsync();

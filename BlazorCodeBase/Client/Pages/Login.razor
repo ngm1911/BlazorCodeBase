@@ -1,8 +1,10 @@
 ﻿@page "/"
+@using BlazorCodeBase.Client.RefitApi
 @using Microsoft.AspNetCore.Components.Forms
 @inherits OwningComponentBase
 @inject IToastService ToastService
 @inject HttpClient HttpClient
+@inject IUserApi IUserApi
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject AuthorizationUserService AuthorizationUserService

@@ -11,20 +11,19 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using BaseResponse = BlazorCodeBase.Shared.BaseResponse;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,8 +99,7 @@ builder.Services
             })
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {
-                options.ExpireTimeSpan = TimeSpan.FromSeconds(30);
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(1);
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
@@ -228,16 +226,9 @@ app.UseCors("CorsPolicy")
        handler.Run(async httpContext =>
        {
            var exception = httpContext.Features.Get<IExceptionHandlerFeature>();
-           var response = new BaseResponse()
-           {
-               Message = exception?.Error?.Message,
-               StatusCode = httpContext.Response.StatusCode,
-           };
-           httpContext.Response.StatusCode = 200;
-           httpContext.Response.ContentType = "application/json";
-           var responseText = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+           var responseText = Newtonsoft.Json.JsonConvert.SerializeObject((exception?.Error?.Message, httpContext.Response.StatusCode),
+                                                                           Newtonsoft.Json.Formatting.Indented);
            Log.Error(responseText);
-           await httpContext.Response.WriteAsync(responseText);
        });
    })
    .UseFastEndpoints(c =>
@@ -263,37 +254,6 @@ app.UseCors("CorsPolicy")
            }
            return Newtonsoft.Json.JsonConvert.DeserializeObject(requestBody, tDto);
        };
-       c.Serializer.ResponseSerializer = (rsp, dto, cType, jCtx, ct) =>
-       {
-           rsp.ContentType = cType;
-           string responseText = string.Empty;
-           if (rsp.StatusCode > 299)
-           {
-               rsp.StatusCode = 200;
-               responseText = Newtonsoft.Json.JsonConvert.SerializeObject(dto, Newtonsoft.Json.Formatting.Indented);
-               Log.Error(responseText);
-           }
-           else
-           {
-               if (dto is not BaseResponse)
-               {
-                   var response = new BaseResponse()
-                   {
-                       StatusCode = rsp.StatusCode,
-                       Data = dto,
-                       Message = "OK"
-                   };
-                   responseText = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-                   Log.Information(responseText);
-               }
-               else
-               {
-                   responseText = Newtonsoft.Json.JsonConvert.SerializeObject(dto, Newtonsoft.Json.Formatting.Indented);
-                   Log.Information(responseText);
-               }
-           }
-           return rsp.WriteAsync(responseText, ct);
-       };
    });
 
 using (var scope = app.Services.CreateScope())
@@ -312,6 +272,12 @@ app.MapGet("api/google/login", async (context) =>
 {
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/api/google/signin-google/" });
 }).AllowAnonymous();
+
+app.MapPost("api/User/Logout", async (HttpContext context, IOptionsSnapshot<Settings> settings) =>
+{
+    context.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt.CookieOpt);
+
+}).AllowAnonymous(); 
 
 app.Run();
 

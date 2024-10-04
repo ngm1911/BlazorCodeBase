@@ -1,10 +1,4 @@
-﻿using BlazorCodeBase.Shared;
-using Microsoft.AspNetCore.Components;
-using Microsoft.FluentUI.AspNetCore.Components;
-using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
-using System.Net;
-using System.Net.Http.Json;
+﻿using Microsoft.AspNetCore.Components;
 
 namespace BlazorCodeBase.Client.Pages
 {

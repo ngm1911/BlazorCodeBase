@@ -37,7 +37,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                                     .ToListAsync(ct);
             if (userInfo.Count == 0)
             {
-                await SendOkAsync(Responses.UserNotFound, ct);
+                await SendNotFoundAsync(ct);
             }
             else
             {

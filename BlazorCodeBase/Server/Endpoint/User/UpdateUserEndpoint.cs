@@ -22,10 +22,10 @@ namespace BlazorCodeBase.Server.Endpoint.User
 
         public override async Task HandleAsync(UpdateUserRequest req, CancellationToken ct)
         {
-            UserInfo user = await userManager.FindByEmailAsync(req.Email);
+            UserInfo? user = await userManager.FindByEmailAsync(req.Email);
             if (user is null)
             {
-                await SendOkAsync(Responses.UserNotFound, ct);
+                await SendNotFoundAsync(ct);
             }
             else
             {
@@ -51,7 +51,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                                                        user.Email,
                                                        user.UserName,
                                                        role);
-                    await SendCreatedAtAsync(nameof(GetUserInfoEndpoint), new { user.Email }, userInfoResponse);
+                    await SendCreatedAtAsync(nameof(GetUserInfoEndpoint), new { user.Email }, userInfoResponse, cancellation: ct);
                 }   
             }
         }

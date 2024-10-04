@@ -1,4 +1,4 @@
-﻿using BlazorCodeBase.Shared;
+﻿using BlazorCodeBase.Client.RefitApi;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Newtonsoft.Json;
@@ -27,7 +27,7 @@ namespace BlazorCodeBase.Client
         }
     }
 
-    public class AuthorizationUserService(ILocalStorageService _protectedLocalStorage, HttpClient _httpClient)
+    public class AuthorizationUserService(ILocalStorageService _protectedLocalStorage, IUserApi _IUserApi)
     {
         private readonly string _userStorage = "userStorage";
 
@@ -52,18 +52,11 @@ namespace BlazorCodeBase.Client
             {
                 if (user is null)
                 {
-                    try
+                    user = await _IUserApi.CurrentUserInfoAsync();
+                    if (user != null)
                     {
-                        var response = await _httpClient.GetAsync($"api/User/CurrentUserInfo");
-                        if (response.IsSuccessStatusCode)
-                        {
-                            var result = JsonConvert.DeserializeObject<BaseResponse>(await response.Content.ReadAsStringAsync());
-                            var userVerified = JsonConvert.DeserializeObject<User>(result?.Data.ToString());
-                            user = userVerified;
-                            await PersistUserToBrowser(user);
-                        }
+                        await PersistUserToBrowser(user);
                     }
-                    catch { }
                 }
             }
             return user;

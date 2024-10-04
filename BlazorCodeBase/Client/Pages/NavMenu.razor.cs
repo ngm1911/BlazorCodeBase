@@ -11,8 +11,8 @@ namespace BlazorCodeBase.Client.Pages
         {
             try
             {
-                await HttpClient.PostAsync("/api/User/Logout", null)
-                                .ConfigureAwait(false);
+                await IUserApi.LogoutAsync()
+                              .ConfigureAwait(false);
             }
             finally
             {
@@ -27,7 +27,7 @@ namespace BlazorCodeBase.Client.Pages
             bool authorized = false;
             try
             {
-                var result = await HttpClient.GetAsync($"api/pingServer");
+                var result = await ICommonApi.PingServer();
                 authorized = result.IsSuccessStatusCode;
             }
             finally

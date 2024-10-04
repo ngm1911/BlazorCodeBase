@@ -1,10 +1,7 @@
-﻿using BlazorCodeBase.Shared;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
-using System.Net;
-using System.Net.Http.Json;
 
 namespace BlazorCodeBase.Client.Pages
 {
@@ -22,23 +19,13 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 IsLoading = true;
-                var response = await HttpClient.PostAsJsonAsync<RegisterMailRequest>($"api/SendMail/Register", new(_registerRequest.Email));
-                var content = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
+                var errors = await IUserApi.SendMailRegisterAsync(_registerRequest.Email);
+                if (errors.Any())
                 {
-                    var result = JsonConvert.DeserializeObject<BaseResponse>(content);
-                    if (result.StatusCode != (int)HttpStatusCode.OK)
+                    foreach (var error in errors)
                     {
-                        var errors = result.Errors.SelectMany(x => x.Value);
-                        foreach (var error in errors)
-                        {
-                            ToastService.ShowToast(ToastIntent.Error, error);
-                        }
+                        ToastService.ShowToast(ToastIntent.Error, error);
                     }
-                }
-                else
-                {
-                    ToastService.ShowToast(ToastIntent.Error, content);
                 }
             }
             finally
@@ -52,33 +39,19 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 IsLoading = true;
-                var response = await HttpClient.PostAsJsonAsync($"api/User/Register", _registerRequest);
-                var content = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
+                var errors = await IUserApi.RegisterAsync(_registerRequest);
+                if (errors.Any())
                 {
-                    var result = JsonConvert.DeserializeObject<BaseResponse>(content);
-                    if (result.StatusCode == (int)HttpStatusCode.Created)
+                    foreach (var error in errors)
                     {
-                        ToastService.ShowToast(ToastIntent.Success, "OK");
-                        await MyWizard.GoToStepAsync(Value + 1);
-                        SendRegisterMail();
-                    }
-                    else if (result?.Errors?.Count > 0)
-                    {
-                        var errors = result.Errors.SelectMany(x => x.Value);
-                        foreach (var error in errors)
-                        {
-                            ToastService.ShowToast(ToastIntent.Error, error);
-                        }
-                    }
-                    else
-                    {
-                        ToastService.ShowToast(ToastIntent.Error, result.Message);
+                        ToastService.ShowToast(ToastIntent.Error, error);
                     }
                 }
                 else
                 {
-                    ToastService.ShowToast(ToastIntent.Error, content);
+                    ToastService.ShowToast(ToastIntent.Success, "OK");
+                    await MyWizard.GoToStepAsync(Value + 1);
+                    SendRegisterMail();
                 }
             }
             finally
@@ -87,7 +60,7 @@ namespace BlazorCodeBase.Client.Pages
             }
         }
 
-        private class RegisterRequest
+        public class RegisterRequest
         {
             [Required]
             public string? UserName { get; set; }

@@ -29,20 +29,20 @@ namespace BlazorCodeBase.Server.Endpoint.User
         {
             if (string.IsNullOrWhiteSpace(User?.Identity?.Name))
             {
-                await SendOkAsync(Responses.UserNotFound, ct);
+                await SendNotFoundAsync(ct);
             }
             else
             {
                 var user = await userManager.FindByNameAsync(User?.Identity?.Name);
                 if (user is null)
                 {
-                    await SendOkAsync(Responses.UserNotFound, ct);
+                    await SendNotFoundAsync(ct);
                 }
                 else
                 {
                     if (await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, req.Code) == false)
                     {
-                        await SendOkAsync(Responses.UnAuthorized, ct);
+                        await SendUnauthorizedAsync(ct);
                     }
                     else
                     {

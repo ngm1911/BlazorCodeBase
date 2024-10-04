@@ -28,7 +28,7 @@ namespace BlazorCodeBase.Server.Endpoint
             var user = await userManager.FindByEmailAsync(req.ToEmail);
             if (user is null)
             {
-                await SendOkAsync(Responses.UserNotFound, ct);
+                await SendNotFoundAsync(ct);
             }
             else
             {
@@ -47,7 +47,7 @@ namespace BlazorCodeBase.Server.Endpoint
                 }
 
                 ThrowIfAnyErrors();
-                await SendOkAsync(Responses.OK, ct);
+                await SendOkAsync(ct);
             }
         }
     }

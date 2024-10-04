@@ -33,22 +33,22 @@ namespace BlazorCodeBase.Server.Endpoint.User
             UserInfo? user = await userManager.FindByNameAsync(req.UserName);
             if (user is null)
             {
-                await SendOkAsync(Responses.UserNotFound, ct);
+                await SendNotFoundAsync(ct);
             }
             else
             {
                 var result = await signInManager.CheckPasswordSignInAsync(user, req.Password, lockoutOnFailure: true);
                 if (result.IsLockedOut)
                 {
-                    await SendOkAsync(Responses.LockedOut, ct);
+                    await SendAsync("User was locked", (int)StatusCodes.Status400BadRequest, ct);
                 }
                 else if(result.IsNotAllowed)
                 {
-                    await SendOkAsync(Responses.NeedConfirmEmail, ct);
+                    await SendAsync("Need confirm email", (int)StatusCodes.Status400BadRequest, ct);
                 }
                 else if(!result.Succeeded)
                 {
-                    await SendOkAsync(Responses.UnAuthorized, ct);
+                    await SendUnauthorizedAsync(ct);
                 }
                 else
                 {
@@ -72,7 +72,7 @@ namespace BlazorCodeBase.Server.Endpoint.User
                     {
                         AddError(string.Join(Environment.NewLine, sendMailConfirm.ErrorMessages));
                     }
-                    await SendOkAsync(Responses.RequiresTwoFactor, ct);
+                    await SendAsync("Require 2 FA", (int)StatusCodes.Status400BadRequest, ct);
                 }
             }
         }
