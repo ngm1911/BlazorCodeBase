@@ -7,6 +7,12 @@
 	<PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Logs\**" />
+    <Content Remove="Logs\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <None Remove="Logs\**" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Client\BlazorCodeBase.Client.csproj" />
     <ProjectReference Include="..\Shared\BlazorCodeBase.Shared.csproj" />
   </ItemGroup>
