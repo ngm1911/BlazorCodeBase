@@ -3,6 +3,7 @@ using BlazorCodeBase.Server.Database.Interceptor;
 using BlazorCodeBase.Server.Database.Model;
 using BlazorCodeBase.Server.Model.Command;
 using BlazorCodeBase.Server.Model.Common;
+using BlazorCodeBase.Shared;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using MailKit.Security;
@@ -21,6 +22,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -253,6 +255,19 @@ app.UseCors("CorsPolicy")
                Log.Information(requestBody);
            }
            return Newtonsoft.Json.JsonConvert.DeserializeObject(requestBody, tDto);
+       };
+       c.Serializer.ResponseSerializer = (rsp, dto, cType, jCtx, ct) =>
+       {
+           rsp.ContentType = cType;
+           var responseText = Newtonsoft.Json.JsonConvert.SerializeObject(dto, Newtonsoft.Json.Formatting.Indented);
+           if (rsp.StatusCode != 400)
+           {
+               var response = new HttpResult()
+                                    .AddData(dto);
+               responseText = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+           }
+           Log.Information(responseText);
+           return rsp.WriteAsync(responseText, ct);
        };
    });
 

@@ -11,3 +11,4 @@
 - Microsoft.AspNetCore.Components.Authorization
 - Microsoft.FluentUI.AspNetCore
 - Blazored.LocalStorage
+- RefitApi

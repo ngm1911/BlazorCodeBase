@@ -26,6 +26,10 @@
                         <FluentTextField Style="width: 100%" Immediate @bind-Value=_registerRequest.FirstName Label="First name" TextFieldType="TextFieldType.Text" Required></FluentTextField>
                         <FluentTextField Style="width: 100%" Immediate @bind-Value=_registerRequest.LastName Label="Last name" TextFieldType="TextFieldType.Text" Required></FluentTextField>
                         <FluentTextField Style="width: 100%" Immediate @bind-Value=_registerRequest.Password Label="Password" TextFieldType="TextFieldType.Password" Required></FluentTextField>
+
+                        <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
+                            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" IconEnd="@(new Icons.Regular.Size24.ArrowCircleRight().WithColor(Color.Fill))" Loading="IsLoading">Next</FluentButton>
+                        </FluentStack>
                     </FluentStack>
                 </FluentEditForm>
             </FluentWizardStep>
@@ -33,22 +37,14 @@
             <FluentWizardStep Label="Finish">
                 <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" >
                     <p>Thank you for registering on our platform. To complete your registration, please confirm your email address</p>
-                    <FluentButton OnClick="SendRegisterMail" Appearance="Appearance.Accent" Loading="IsLoading">Resend</FluentButton>
+                    <FluentButton OnClick="SendRegisterMail" Appearance="Appearance.Accent" Loading="IsSending">Resend</FluentButton>
                 </FluentStack>
             </FluentWizardStep>
         </Steps>
         <ButtonTemplate>
             @{
-                var index = context;
-                var lastStepIndex = 1;
-
                 <div>
-                  @if (index != lastStepIndex)
-                    {
-                        <FluentButton Type="ButtonType.Submit" Loading="@IsLoading" OnClick="Submit" IconEnd="@(new Icons.Regular.Size24.ArrowCircleRight().WithColor(Color.Fill))" Appearance="Appearance.Accent">Next</FluentButton>
-
-                    }
-                    else
+                    @if (context == 1)
                     {
                         <FluentButton OnClick="@(x => NavigationManager.NavigateTo("/"))" Appearance="Appearance.Accent">Finish</FluentButton>
                     }

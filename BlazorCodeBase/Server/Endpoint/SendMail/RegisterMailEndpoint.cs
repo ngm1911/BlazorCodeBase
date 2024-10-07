@@ -1,11 +1,10 @@
 ﻿using BlazorCodeBase.Server.Database.Model;
 using BlazorCodeBase.Server.Endpoint.User;
 using BlazorCodeBase.Server.Model.Command;
+using BlazorCodeBase.Shared;
 using FastEndpoints;
-using FastEndpoints.Swagger;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using System.ComponentModel;
 
 namespace BlazorCodeBase.Server.Endpoint
 {
@@ -47,12 +46,10 @@ namespace BlazorCodeBase.Server.Endpoint
                 }
 
                 ThrowIfAnyErrors();
-                await SendOkAsync(ct);
+                await SendOkAsync("OK", ct);
             }
         }
     }
-
-    record RegisterMailRequest(string? ToEmail);
 
     class RegisterMailRequestValidator : Validator<RegisterMailRequest>
     {

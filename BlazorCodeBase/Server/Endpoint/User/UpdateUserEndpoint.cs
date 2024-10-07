@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using System.Net;
 using BlazorCodeBase.Server.Database.Model;
 using Microsoft.AspNetCore.Http.HttpResults;
+using BlazorCodeBase.Shared;
 
 namespace BlazorCodeBase.Server.Endpoint.User
 {

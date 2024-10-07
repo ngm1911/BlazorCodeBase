@@ -12,29 +12,32 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 await IUserApi.LogoutAsync()
-                              .ConfigureAwait(false);
+                              .ConfigureAwait(true);
             }
             finally
             {
                 AuthorizationUserService.ClearTokenUser();
-                NavigationManager.NavigateTo("/");
+                NavigationManager.Refresh(true);
             }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             await base.OnAfterRenderAsync(firstRender);
-            bool authorized = false;
-            try
+            if (firstRender)
             {
-                var result = await ICommonApi.PingServer();
-                authorized = result.IsSuccessStatusCode;
-            }
-            finally
-            {
-                if (authorized == false)
+                bool authorized = false;
+                try
                 {
-                    await LogoutAsync();
+                    var result = await ICommonApi.PingServer();
+                    authorized = result.IsSuccessStatusCode;
+                }
+                finally
+                {
+                    if (authorized == false)
+                    {
+                        await LogoutAsync();
+                    }
                 }
             }
         }

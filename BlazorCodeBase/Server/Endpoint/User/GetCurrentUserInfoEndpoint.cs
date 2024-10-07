@@ -1,5 +1,6 @@
 ﻿using BlazorCodeBase.Server.Database.DbContext;
 using BlazorCodeBase.Server.Database.Model;
+using BlazorCodeBase.Shared;
 using FastEndpoints;
 using FastEndpoints.Security;
 using Microsoft.AspNetCore.Identity;

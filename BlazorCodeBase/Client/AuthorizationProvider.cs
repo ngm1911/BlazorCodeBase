@@ -1,4 +1,5 @@
 ﻿using BlazorCodeBase.Client.RefitApi;
+using BlazorCodeBase.Shared;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Newtonsoft.Json;
@@ -35,33 +36,45 @@ namespace BlazorCodeBase.Client
 
         public async void ClearTokenUser() => await _protectedLocalStorage.RemoveItemAsync(_userStorage);
 
-        public async Task PersistUserToBrowser(User token)
+        public async Task PersistUserToBrowser(UserInfoResponse token)
         {
             await _protectedLocalStorage.SetItemAsync(_userStorage, token);
         }
 
-        public async Task<User?> FetchUserFromBrowser()
+        public async Task<UserInfoResponse?> FetchUserFromBrowser()
         {
-            User? user = default!;
+            UserInfoResponse? user = default!;
             var storage = await _protectedLocalStorage.GetItemAsStringAsync(_userStorage);
             try
             {
-                user = JsonConvert.DeserializeObject<User>(storage ?? string.Empty);
+                user = JsonConvert.DeserializeObject<UserInfoResponse>(storage ?? string.Empty);
             }
             finally
             {
-                if (user is null)
+                try
                 {
-                    user = await _IUserApi.CurrentUserInfoAsync();
+                    if (user is null)
+                    {
+                        var result = await _IUserApi.CurrentUserInfoAsync();
+                        if (result.IsSuccess)
+                        {
+                            user = result.Data;
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+
+                }
+                finally
+                {
                     if (user != null)
                     {
                         await PersistUserToBrowser(user);
                     }
-                }
+                }                
             }
             return user;
         }
     }
-
-    public record User(string? FirstName, string? LastName, string? Email, string? UserName, IEnumerable<string> Roles);
 }

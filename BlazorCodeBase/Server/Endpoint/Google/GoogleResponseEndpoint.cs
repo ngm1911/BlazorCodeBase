@@ -70,7 +70,7 @@ namespace BlazorCodeBase.Server.Endpoint.Google
                 HttpContext.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt!.CookieOpt);
                 HttpContext.Response.Cookies.Append(Constant.ACCESS_TOKEN, jwtToken, settings.Value.Jwt.CookieOpt);
 
-                await SendRedirectAsync("/mainScreen");
+                await SendRedirectAsync("/");
             }
             else
             {

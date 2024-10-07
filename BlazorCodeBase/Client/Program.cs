@@ -37,7 +37,12 @@ builder.Services.AddRefitClient<IUserApi>()
                 .AddHttpMessageHandler<RequestHandler>()
        .Services
                 .AddRefitClient<IGoogleApi>()
-                .ConfigureHttpClient(c => c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+                .ConfigureHttpClient(c => c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+                .AddHttpMessageHandler<RequestHandler>()
+       .Services
+                .AddRefitClient<ICommonApi>()
+                .ConfigureHttpClient(c => c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+                .AddHttpMessageHandler<RequestHandler>();
 
 
 await builder.Build().RunAsync();

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
 using BlazorCodeBase.Server.Database.Model;
+using BlazorCodeBase.Shared;
 
 namespace BlazorCodeBase.Server.Endpoint.User
 {

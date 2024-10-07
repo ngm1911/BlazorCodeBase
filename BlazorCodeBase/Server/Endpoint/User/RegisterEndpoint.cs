@@ -1,9 +1,7 @@
-﻿using BlazorCodeBase.Client;
-using BlazorCodeBase.Server.Database.Model;
-using BlazorCodeBase.Server.Model.Command;
+﻿using BlazorCodeBase.Server.Model.Command;
+using BlazorCodeBase.Shared;
 using FastEndpoints;
 using FluentValidation;
-using Microsoft.AspNetCore.Identity;
 using System.Net;
 
 namespace BlazorCodeBase.Server.Endpoint.User
@@ -69,8 +67,6 @@ namespace BlazorCodeBase.Server.Endpoint.User
                 .EmailAddress(FluentValidation.Validators.EmailValidationMode.AspNetCoreCompatible);
         }
     }
-
-    record RegisterRequest(string UserName, string? FirstName, string? LastName, string? Password, string? Email);
 
     public record RegisterTemplateModel(string UserName, string? FirstName, string? LastName, string? Url);
 

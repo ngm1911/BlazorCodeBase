@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/login"
 @using BlazorCodeBase.Client.RefitApi
 @using Microsoft.AspNetCore.Components.Forms
 @inherits OwningComponentBase
@@ -36,20 +36,18 @@
                             <FluentDivider Style="width: 100%;" Role="DividerRole.Presentation"></FluentDivider>
 
                             <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
-                                <a href="https://localhost:7081/api/google/login">Login with Google</a>
-                            </FluentStack>
-
-                            @* <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
-                                <FluentButton Appearance="Appearance.Accent" Loading="IsLoading" Action="@LoginGoogleUrl">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 533.5 544.3" style="margin-right: 8px;">
-                                        <path d="M533.5 278.4c0-17.4-1.6-34.3-4.7-50.6H272v95.3h147.4c-6.3 34.3-25 63.3-53.3 82.7v68.6h86.2c50.4-46.4 79.6-114.4 79.6-194.6z" fill="#4285F4" />
-                                        <path d="M272 544.3c72.5 0 133.3-24 177-64.9l-86.2-68.6c-24.1 16.2-54.8 25.8-90.8 25.8-69.8 0-129.1-47-150.5-110.3H35.1v69.3c44.6 88.2 136.8 148.1 236.9 148.1z" fill="#34A853" />
-                                        <path d="M121.5 324.6c-5.2-15.6-8.2-32.3-8.2-49.6s3-34 8.2-49.6V150.8H35.1C14.7 205.1 0 270.7 0 344s14.7 138.9 35.1 193.2l86.4-69.3z" fill="#FBBC05" />
-                                        <path d="M272 107.7c38.3 0 72.6 13.3 100.1 39.4l75.2-75.2C404.3 24.7 344.5 0 272 0 171.9 0 79.7 59.9 35.1 148.1l86.4 69.3c21.4-63.3 80.7-110.3 150.5-110.3z" fill="#EA4335" />
-                                    </svg>
-                                    Login with Google
+                                <FluentButton OnClick="DoLoginByGoogle" Appearance="Appearance.Outline" Loading="IsLoading">
+                                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 533.5 544.3" style="margin-right: 8px;">
+                                            <path d="M533.5 278.4c0-17.4-1.6-34.3-4.7-50.6H272v95.3h147.4c-6.3 34.3-25 63.3-53.3 82.7v68.6h86.2c50.4-46.4 79.6-114.4 79.6-194.6z" fill="#4285F4" />
+                                            <path d="M272 544.3c72.5 0 133.3-24 177-64.9l-86.2-68.6c-24.1 16.2-54.8 25.8-90.8 25.8-69.8 0-129.1-47-150.5-110.3H35.1v69.3c44.6 88.2 136.8 148.1 236.9 148.1z" fill="#34A853" />
+                                            <path d="M121.5 324.6c-5.2-15.6-8.2-32.3-8.2-49.6s3-34 8.2-49.6V150.8H35.1C14.7 205.1 0 270.7 0 344s14.7 138.9 35.1 193.2l86.4-69.3z" fill="#FBBC05" />
+                                            <path d="M272 107.7c38.3 0 72.6 13.3 100.1 39.4l75.2-75.2C404.3 24.7 344.5 0 272 0 171.9 0 79.7 59.9 35.1 148.1l86.4 69.3c21.4-63.3 80.7-110.3 150.5-110.3z" fill="#EA4335" />
+                                        </svg>
+                                        Login with Google
+                                    </FluentStack>
                                 </FluentButton>
-                            </FluentStack> *@
+                            </FluentStack>
 
                             <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
                                 <FluentAnchor Href="#" Appearance="Appearance.Hypertext" OnClick="@(x => NavigationManager.NavigateTo("register"))">Register</FluentAnchor>
@@ -66,16 +64,8 @@
             </Steps>
             <ButtonTemplate>
                 @{
-                    var index = context;
-                    var lastStepIndex = 1;
-
                     <div>
-                        @if (index != lastStepIndex)
-                        {
-                            // <FluentButton Type="ButtonType.Submit" Loading="@IsLoading" OnClick="DoLogin" Appearance="Appearance.Accent">Next</FluentButton>
-
-                        }
-                        else
+                        @if (context == 1)
                         {
                             <FluentButton OnClick="VerifyCode" Appearance="Appearance.Accent" IconEnd="@(new Icons.Regular.Size24.ArrowCircleRight().WithColor(Color.Fill))">Finish</FluentButton>
                         }

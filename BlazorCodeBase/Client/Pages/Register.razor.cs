@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using BlazorCodeBase.Shared;
+using Microsoft.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components;
-using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 
 namespace BlazorCodeBase.Client.Pages
 {
@@ -9,8 +10,10 @@ namespace BlazorCodeBase.Client.Pages
     {
         FluentWizard MyWizard = default!;
         int Value = 0;
+        bool IsLoading { get; set; }
+        bool IsSending { get; set; } = true;
 
-        public bool IsLoading { get; set; }
+        CancellationTokenSource token = new();
 
         private RegisterRequest _registerRequest = new();
 
@@ -18,11 +21,14 @@ namespace BlazorCodeBase.Client.Pages
         {
             try
             {
-                IsLoading = true;
-                var errors = await IUserApi.SendMailRegisterAsync(_registerRequest.Email);
-                if (errors.Any())
+                await token.CancelAsync();
+                token = new CancellationTokenSource();
+
+                IsSending = true;
+                var result = await IUserApi.SendMailRegisterAsync(new (_registerRequest.Email));
+                if (!result.IsSuccess)
                 {
-                    foreach (var error in errors)
+                    foreach (var error in result.Errors)
                     {
                         ToastService.ShowToast(ToastIntent.Error, error);
                     }
@@ -30,7 +36,8 @@ namespace BlazorCodeBase.Client.Pages
             }
             finally
             {
-                IsLoading = false;
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                IsSending = false;
             }
         }
 
@@ -39,19 +46,21 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 IsLoading = true;
-                var errors = await IUserApi.RegisterAsync(_registerRequest);
-                if (errors.Any())
+                var result = await IUserApi.RegisterAsync(_registerRequest);
+                if (!result.IsSuccess)
                 {
-                    foreach (var error in errors)
+                    foreach (var error in result.Errors)
                     {
                         ToastService.ShowToast(ToastIntent.Error, error);
                     }
                 }
                 else
                 {
+                    IsLoading = false;
+
                     ToastService.ShowToast(ToastIntent.Success, "OK");
                     await MyWizard.GoToStepAsync(Value + 1);
-                    SendRegisterMail();
+                    await SendRegisterMail();
                 }
             }
             finally
@@ -59,26 +68,5 @@ namespace BlazorCodeBase.Client.Pages
                 IsLoading = false;
             }
         }
-
-        public class RegisterRequest
-        {
-            [Required]
-            public string? UserName { get; set; }
-
-            [Required]
-            public string? FirstName { get; set; }
-
-            [Required]
-            public string? LastName { get; set; }
-
-            [Required]
-            [EmailAddress]
-            public string? Email { get; set; }
-
-            [Required]
-            public string? Password { get; set; }
-        }
-
-        record RegisterMailRequest(string? ToEmail);
     }
 }

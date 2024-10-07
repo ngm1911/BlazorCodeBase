@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BlazorCodeBase.Shared;
+using Newtonsoft.Json;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -9,82 +10,61 @@ namespace BlazorCodeBase.Client.RefitApi
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var rawResponse = await base.SendAsync(request, ct);
-
             var content = await rawResponse.Content.ReadAsStringAsync(ct);
-            if (rawResponse.IsSuccessStatusCode)
+            if (rawResponse.IsSuccessStatusCode == false)
             {
-                rawResponse.Content = JsonContent.Create(Array.Empty<string>());
-            }
-            else
-            {
+                object httpResult;
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    rawResponse.Content = JsonContent.Create(new string[] { rawResponse.ReasonPhrase });
+                    httpResult = new HttpResult()
+                                        .AddErrors(rawResponse.ReasonPhrase);
                 }
                 else
                 {
-                    if (TryDeserializeObject(content, out ValidateError[]? validateErrors))
+                    if (tryDeserializeObject(content, out ValidateError[]? validateErrors))
                     {
-                        rawResponse.Content = JsonContent.Create(validateErrors.Select(x => x.description));
+                        httpResult = new HttpResult()
+                                        .AddErrors(validateErrors.Select(x => x.description).ToArray());
                     }
-                    else if (TryDeserializeObject(content, out ResponseError? responseErrors))
+                    else if (tryDeserializeObject(content, out ResponseError? responseErrors))
                     {
-                        rawResponse.Content = JsonContent.Create(responseErrors.errors.SelectMany(x => x.Value));
+                        httpResult = new HttpResult()
+                                        .AddErrors(responseErrors.errors.SelectMany(x => x.Value).ToArray());
                     }
                     else
                     {
-                        rawResponse.Content = JsonContent.Create(new string[] { content });
+                        httpResult = new HttpResult()
+                                        .AddErrors(content);
                     }
                 }
+                rawResponse.Content = JsonContent.Create(httpResult);
                 rawResponse.StatusCode = HttpStatusCode.OK;
             }
             return rawResponse;
-        }
 
-
-        bool TryDeserializeObject<T>(string json, out T? result)
-        {
-            try
+            bool tryDeserializeObject<T>(string json, out T? result)
             {
-                result = JsonConvert.DeserializeObject<T>(json);
-                return true;
-            }
-            catch (JsonException)
-            {
-                result = default;
-                return false;
+                try
+                {
+                    result = JsonConvert.DeserializeObject<T>(json);
+                    return true;
+                }
+                catch
+                {
+                    result = default;
+                    return false;
+                }
             }
         }
     }
 
-    public class BaseResponse
-    {
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public object? Data { get; set; }
-
-        public int StatusCode { get; set; }
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string? Message { get; set; }
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, string[]>? Errors { get; set; }
-
-        public BaseResponse(object? data = null, HttpStatusCode statusCode = HttpStatusCode.OK, string? message = "OK")
-        {
-            Data = data;
-            StatusCode = (int)statusCode;
-            Message = message;
-        }
-    }
-
-    public class ValidateError
+    class ValidateError
     {
         public string code { get; set; }
         public string description { get; set; }
     }
 
-    public class ResponseError
+    class ResponseError
     {
         public int statusCode { get; set; }
         public string message { get; set; }

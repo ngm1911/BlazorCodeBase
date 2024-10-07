@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using System.Net;
 using BlazorCodeBase.Server.Database.Model;
 using Serilog;
+using BlazorCodeBase.Shared;
 
 namespace BlazorCodeBase.Server.Endpoint.User
 {
@@ -77,8 +78,6 @@ namespace BlazorCodeBase.Server.Endpoint.User
             }
         }
     }
-
-    record LoginRequest (string? UserName, string? Password);
 
     class LoginValidator : Validator<LoginRequest>
     {

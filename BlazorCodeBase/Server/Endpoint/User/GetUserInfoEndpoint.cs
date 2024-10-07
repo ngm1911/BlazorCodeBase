@@ -1,5 +1,6 @@
 ﻿using BlazorCodeBase.Server.Database.DbContext;
 using BlazorCodeBase.Server.Database.Model;
+using BlazorCodeBase.Shared;
 using FastEndpoints;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +56,4 @@ namespace BlazorCodeBase.Server.Endpoint.User
     }
 
     record UserInfoRequest(string? Email);
-
-    record UserInfoResponse(string? FirstName, string? LastName, string? Email, string? UserName, IEnumerable<string> Roles);
 }

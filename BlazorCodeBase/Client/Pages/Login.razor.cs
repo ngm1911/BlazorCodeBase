@@ -1,8 +1,7 @@
 ﻿using BlazorCodeBase.Client.RefitApi;
+using BlazorCodeBase.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components;
-using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
 
 namespace BlazorCodeBase.Client.Pages
 {
@@ -17,12 +16,9 @@ namespace BlazorCodeBase.Client.Pages
 
         public bool IsLoading { get; set; }
 
-        public string LoginByGoogle
+        private void DoLoginByGoogle()
         {
-            get
-            {
-                return $"{HttpClient.BaseAddress}/api/google/login";
-            }
+            NavigationManager.NavigateTo("api/google/login/", true);
         }
 
         private async Task DoLogin()
@@ -30,10 +26,10 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 IsLoading = true;
-                var errors = await IUserApi.LoginAsync(_registerRequest);
-                if (errors.Any())
+                var result = await IUserApi.LoginAsync(_registerRequest);
+                if (!result.IsSuccess)
                 {
-                    foreach (var error in errors)
+                    foreach (var error in result.Errors)
                     {
                         ToastService.ShowToast(ToastIntent.Error, error);
                     }
@@ -54,22 +50,22 @@ namespace BlazorCodeBase.Client.Pages
             try
             {
                 IsLoading = true;
-                var errors = await IUserApi.Verify2FAAsync(TwoFactorCode);
-                if (errors.Any())
+                var result = await IUserApi.Verify2FAAsync(TwoFactorCode);
+                if (!result.IsSuccess)
                 {
-                    foreach (var error in errors)
+                    foreach (var error in result.Errors)
                     {
                         ToastService.ShowToast(ToastIntent.Error, error);
                     }
                 }
                 else
                 {
-                    var userVerified = await IUserApi.CurrentUserInfoAsync();
-                    if (userVerified != null)
+                    var userInfo = await IUserApi.CurrentUserInfoAsync();
+                    if (userInfo.IsSuccess)
                     {
-                        await AuthorizationUserService.PersistUserToBrowser(userVerified)
+                        await AuthorizationUserService.PersistUserToBrowser(userInfo.Data)
                                                       .ConfigureAwait(true);
-                        NavigationManager.NavigateTo("mainScreen");
+                        NavigationManager.NavigateTo("/");
                     }
                 }
             }
@@ -77,15 +73,6 @@ namespace BlazorCodeBase.Client.Pages
             {
                 IsLoading = false;
             }
-        }
-
-        public class LoginRequest
-        {
-            [Required]
-            public string? UserName { get; set; }
-
-            [Required]
-            public string? Password { get; set; }
         }
     }
 }
