@@ -62,7 +62,7 @@ namespace BlazorCodeBase.Client
                         }
                     }
                 }
-                catch(Exception ex)
+                catch
                 {
 
                 }

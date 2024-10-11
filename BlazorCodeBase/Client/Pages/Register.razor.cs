@@ -1,13 +1,20 @@
-﻿using BlazorCodeBase.Shared;
+﻿using BlazorCodeBase.Client.RefitApi;
+using BlazorCodeBase.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 
 namespace BlazorCodeBase.Client.Pages
 {
     public partial class Register : OwningComponentBase
     {
+        #region Inject
+        [Inject]
+        public IToastService ToastService { get; set; }
+
+        [Inject]
+        public IUserApi IUserApi { get; set; }
+        #endregion
+
         FluentWizard MyWizard = default!;
         int Value = 0;
         bool IsLoading { get; set; }

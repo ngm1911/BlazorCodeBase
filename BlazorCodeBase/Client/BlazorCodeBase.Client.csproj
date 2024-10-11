@@ -6,6 +6,12 @@
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Dialog\**" />
+    <Content Remove="Dialog\**" />
+    <EmbeddedResource Remove="Dialog\**" />
+    <None Remove="Dialog\**" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Shared\BlazorCodeBase.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -22,8 +28,5 @@
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.10.0" />
     <PackageReference Include="Refit" Version="7.2.1" />
     <PackageReference Include="Refit.HttpClientFactory" Version="7.2.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Dialog\" />
   </ItemGroup>
 </Project>

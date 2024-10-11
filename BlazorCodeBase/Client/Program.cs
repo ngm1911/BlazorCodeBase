@@ -44,5 +44,4 @@ builder.Services.AddRefitClient<IUserApi>()
                 .ConfigureHttpClient(c => c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
                 .AddHttpMessageHandler<RequestHandler>();
 
-
 await builder.Build().RunAsync();

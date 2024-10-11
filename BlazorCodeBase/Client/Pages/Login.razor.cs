@@ -7,6 +7,22 @@ namespace BlazorCodeBase.Client.Pages
 {
     public partial class Login : OwningComponentBase
     {
+        #region Inject
+        [Inject]
+        public NavigationManager NavigationManager { get; set; }
+
+        [Inject]
+        public AuthorizationUserService AuthorizationUserService { get; set; }
+
+        [Inject]
+        public IDialogService DialogService { get; set; }
+        [Inject]
+        public IToastService ToastService { get; set; }
+
+        [Inject]
+        public IUserApi IUserApi { get; set; }
+        #endregion
+
         FluentWizard MyWizard = default!;
         int Value;
 

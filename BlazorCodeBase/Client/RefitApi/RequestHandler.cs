@@ -19,23 +19,20 @@ namespace BlazorCodeBase.Client.RefitApi
                     httpResult = new HttpResult()
                                         .AddErrors(rawResponse.ReasonPhrase);
                 }
+                else if (tryDeserializeObject(content, out ValidateError[]? validateErrors))
+                {
+                    httpResult = new HttpResult()
+                                    .AddErrors(validateErrors.Select(x => x.description).ToArray());
+                }
+                else if (tryDeserializeObject(content, out ResponseError? responseErrors))
+                {
+                    httpResult = new HttpResult()
+                                    .AddErrors(responseErrors.errors.SelectMany(x => x.Value).ToArray());
+                }
                 else
                 {
-                    if (tryDeserializeObject(content, out ValidateError[]? validateErrors))
-                    {
-                        httpResult = new HttpResult()
-                                        .AddErrors(validateErrors.Select(x => x.description).ToArray());
-                    }
-                    else if (tryDeserializeObject(content, out ResponseError? responseErrors))
-                    {
-                        httpResult = new HttpResult()
-                                        .AddErrors(responseErrors.errors.SelectMany(x => x.Value).ToArray());
-                    }
-                    else
-                    {
-                        httpResult = new HttpResult()
-                                        .AddErrors(content);
-                    }
+                    httpResult = new HttpResult()
+                                    .AddErrors(content);
                 }
                 rawResponse.Content = JsonContent.Create(httpResult);
                 rawResponse.StatusCode = HttpStatusCode.OK;

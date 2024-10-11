@@ -1,10 +1,24 @@
-﻿using Microsoft.AspNetCore.Components;
-using System.Net.Http;
+﻿using BlazorCodeBase.Client.RefitApi;
+using Microsoft.AspNetCore.Components;
 
 namespace BlazorCodeBase.Client.Pages
 {
     public partial class NavMenu : OwningComponentBase
     {
+        #region Inject
+        [Inject]
+        public NavigationManager NavigationManager { get; set; }
+
+        [Inject]
+        public AuthorizationUserService AuthorizationUserService { get; set; }
+
+        [Inject]
+        public ICommonApi ICommonApi { get; set; }
+
+        [Inject]
+        public IUserApi IUserApi { get; set; }
+        #endregion
+
         public bool IsLoading { get; set; }
 
         private async Task LogoutAsync()

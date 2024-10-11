@@ -13,16 +13,14 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -36,11 +34,12 @@ var configuration = builder.Configuration
                                         false,
                                         reloadOnChange: true)
                             .Build();
-
+var settingsSection = configuration.GetSection(nameof(Settings));
+var settings = settingsSection.Get<Settings>();
 builder.Services
-        .Configure<Settings>(configuration.GetSection(nameof(Settings)))
+        .Configure<Settings>(settingsSection)
         .AddEntityFrameworkSqlite()
-        .AddDbContext<SQLiteContext>(options => options.UseSqlite(configuration["Settings:ConnectionString:DbContext"]))
+        .AddDbContext<SQLiteContext>(options => options.UseSqlite(settings.ConnectionString.DbContext))
         .AddEndpointsApiExplorer()
         .AddHealthChecks()
         .Services
@@ -92,72 +91,72 @@ builder.Services
         {
             options.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(10);
         })
-            .AddAuthentication(options =>
-            {
-                options.DefaultScheme = "MultiAuthScheme";
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-            {
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(1);
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
-            })
-            .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
-            {
-                options.ClientId = configuration["Settings:GoogleAuthen:ClientId"];
-                options.ClientSecret = configuration["Settings:GoogleAuthen:ClientSecret"];
-                options.CallbackPath = "/api/google/signin-google";
+        .AddAuthentication(options =>
+        {
+            options.DefaultScheme = "MultiAuthScheme";
+            options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        })
+        .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+        {
+            options.ClientId = settings.GoogleAuthen.ClientId;
+            options.ClientSecret = settings.GoogleAuthen.ClientSecret;
+            options.CallbackPath = settings.GoogleAuthen.RedirectUris;
 
-                options.Events.OnRedirectToAuthorizationEndpoint = context =>
+            options.Events.OnRedirectToAuthorizationEndpoint = context =>
+            {
+                var uriBuilder = new UriBuilder(context.RedirectUri);
+                var query = QueryHelpers.ParseQuery(uriBuilder.Query);
+                var queryDict = new Dictionary<string, string>(query.SelectMany(kvp => kvp.Value.Select(v => new KeyValuePair<string, string>(kvp.Key, v))));
+                queryDict.TryAdd("prompt", "select_account");
+                uriBuilder.Query = QueryString.Create(queryDict).ToUriComponent();
+                context.Response.Redirect(uriBuilder.ToString());
+                return Task.CompletedTask;
+            };
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateLifetime = false,
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RequireExpirationTime = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Jwt.Key))
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
                 {
-                    var uriBuilder = new UriBuilder(context.RedirectUri);
-                    var query = QueryHelpers.ParseQuery(uriBuilder.Query);
-                    var queryDict = new Dictionary<string, string>(query.SelectMany(kvp => kvp.Value.Select(v => new KeyValuePair<string, string>(kvp.Key, v))));
-                    queryDict.TryAdd("prompt", "select_account");
-                    uriBuilder.Query = QueryString.Create(queryDict).ToUriComponent();
-                    context.Response.Redirect(uriBuilder.ToString());
+                    context.Token = context.Request.Cookies[Constant.ACCESS_TOKEN];
                     return Task.CompletedTask;
-                };
-            })
-            .AddJwtBearer(options =>
+                }
+            };
+        })
+        .AddPolicyScheme("MultiAuthScheme", "MultiAuthScheme", options =>
+        {
+            options.ForwardDefaultSelector = context =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                if (context.Request.Path.StartsWithSegments("/api/google"))
                 {
-                    ValidateLifetime = false,
-                    ValidateIssuerSigningKey = true,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    RequireExpirationTime = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Settings:Jwt:Key"]))
-                };
-
-                options.Events = new JwtBearerEvents
+                    return CookieAuthenticationDefaults.AuthenticationScheme;
+                }
+                else
                 {
-                    OnMessageReceived = context =>
-                    {
-                        context.Token = context.Request.Cookies[Constant.ACCESS_TOKEN];
-                        return Task.CompletedTask;
-                    }
-                };
-            })
-            .AddPolicyScheme("MultiAuthScheme", "MultiAuthScheme", options =>
-            {
-                options.ForwardDefaultSelector = context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api/google"))
-                    {
-                        return CookieAuthenticationDefaults.AuthenticationScheme;
-                    }
-                    else
-                    {
-                        return JwtBearerDefaults.AuthenticationScheme;
-                    }
-                };
-            })
+                    return JwtBearerDefaults.AuthenticationScheme;
+                }
+            };
+        })
         .Services
         .AddAuthorization(options =>
         {
@@ -176,15 +175,15 @@ builder.Services
                 s.Version = "v1.0";
             };
         })
-        .AddFluentEmail(configuration["Settings:MailSettings:SenderMail"])
+        .AddFluentEmail(settings.MailSettings.SenderMail)
         .AddMailKitSender(new()
         {
-            User = configuration["Settings:MailSettings:Username"],
-            Password = configuration["Settings:MailSettings:Password"],
-            Server = configuration["Settings:MailSettings:Host"],
-            Port = int.Parse(configuration["Settings:MailSettings:Port"]),
-            SocketOptions = bool.Parse(configuration["Settings:MailSettings:IsSecure"]) ? SecureSocketOptions.StartTls : SecureSocketOptions.None,
-            RequiresAuthentication = bool.Parse(configuration["Settings:MailSettings:IsAuthen"])
+            User = settings.MailSettings.Username,
+            Password = settings.MailSettings.Password,
+            Server = settings.MailSettings.Host,
+            Port = settings.MailSettings.Port,
+            SocketOptions = settings.MailSettings.IsSecure ? SecureSocketOptions.StartTls : SecureSocketOptions.None,
+            RequiresAuthentication = settings.MailSettings.IsAuthen
         })
         .AddRazorRenderer();
 AddSerilog();
@@ -283,15 +282,14 @@ using (var scope = app.Services.CreateScope())
     await roleManager.CreateAsync(new IdentityRole("Admin"));
 }
 
-app.MapGet("api/google/login", async (context) =>
+app.MapGet("api/google/login", async (HttpContext context, IOptionsSnapshot<Settings> settings) =>
 {
-    await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = "/api/google/signin-google/" });
+    await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties { RedirectUri = $"{settings.Value.GoogleAuthen.RedirectUris}/" });
 }).AllowAnonymous();
 
 app.MapPost("api/User/Logout", async (HttpContext context, IOptionsSnapshot<Settings> settings) =>
 {
     context.Response.Cookies.Delete(Constant.ACCESS_TOKEN, settings.Value.Jwt.CookieOpt);
-
 }).AllowAnonymous(); 
 
 app.Run();
