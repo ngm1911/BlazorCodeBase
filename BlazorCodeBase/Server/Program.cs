@@ -16,7 +16,6 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -227,7 +226,8 @@ app.UseCors("CorsPolicy")
        handler.Run(async httpContext =>
        {
            var exception = httpContext.Features.Get<IExceptionHandlerFeature>();
-           var responseText = Newtonsoft.Json.JsonConvert.SerializeObject((exception?.Error?.Message, httpContext.Response.StatusCode),
+           var responseText = Newtonsoft.Json.JsonConvert.SerializeObject((exception?.Error?.Message, 
+                                                                           exception?.Error?.StackTrace),
                                                                            Newtonsoft.Json.Formatting.Indented);
            Log.Error(responseText);
        });
